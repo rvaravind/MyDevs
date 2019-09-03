@@ -17,35 +17,116 @@ int main()
 	int Cr_MAX = 173;
 	int Cb_MIN = 77;
 	int Cb_MAX = 127;
-	VideoCapture cap(0);
 
-	if (cap.isOpened() == false)
+	bool choice;
+	cout << "load from cam or load image , 1:camera, 0:filepath  :";
+	cin >> choice;
+
+	if (choice)
 	{
-		cout << " cannot open camera" << endl;
-		cin.get();
-		return -1;
+		VideoCapture cap(0);
+
+		if (cap.isOpened() == false)
+		{
+			cout << " cannot open camera" << endl;
+			cin.get();
+			return -1;
+		}
+
+		double dWidth = cap.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+		double dHeight = cap.get(CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+
+		cout << "Resolution of the video : " << dWidth << " x " << dHeight << endl;
+		string window_name = "My Camera Feed";
+		namedWindow(window_name); //create a window called "My Camera Feed"
+
+		while (true)
+		{
+			Mat frame;
+			bool bSuccess = cap.read(frame); // read a new frame from video 
+
+			//cout << "channels : " << frame.channels() << endl;
+			//Mat skin;
+
+			//cvtColor(frame, skin, COLOR_BGR2YCrCb);
+			//imshow("Ycrcb color space", skin);
+
+			Mat RGBSkin = frame.clone();
+
+			//RGBSkin.dims = (dWidth, dHeight, 3);
+			for (int i = 0; i < dWidth; i++)
+			{
+				for (int j = 0; j < dHeight; j++)
+				{
+
+					//uchar b = frame.at<uchar>(Point(i, j));
+					//uchar g = frame.at<uchar>(Point(i+1, j));
+					//uchar r = frame.at<uchar>(Point(i+2, j));
+					//cout << "BLue : "<< int(rgb[0]) << endl;
+
+					uchar b = frame.data[frame.channels()*(frame.cols*j + i) + 0];
+					uchar g = frame.data[frame.channels()*(frame.cols*j + i) + 1];
+					uchar r = frame.data[frame.channels()*(frame.cols*j + i) + 2];
+
+
+					//cout << "pointx : " << i << " point y : " << j << endl;
+					if ((b > 20) && (g > 40) && (r > 95) && (r > g) && (r > b))
+					{
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 0] = b;
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 1] = g;
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 2] = r;
+					}
+					else
+					{
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 0] = 0;
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 1] = 0;
+						RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 2] = 0;
+					}
+
+				}
+			}
+			//inRange(frame,Scalar(20,40,95), Scalar(200,200,255),RGBSkin);
+			//inRange(skin, Scalar(Y_MIN, Cr_MIN, Cb_MIN), Scalar(Y_MAX, Cr_MAX, Cb_MAX), skin);
+			imshow("Skin from rgb", RGBSkin);
+			imshow("Frame image", frame);
+			//Breaking the while loop if the frames cannot be captured
+			if (bSuccess == false)
+			{
+				cout << "Video camera is disconnected" << endl;
+				cin.get(); //Wait for any key press
+				break;
+			}
+
+			//show the frame in the created window
+			imshow(window_name, frame);
+
+			//wait for for 10 ms until any key is pressed.  
+			//If the 'Esc' key is pressed, break the while loop.
+			//If the any other key is pressed, continue the loop .
+			//If any key is not pressed withing 10 ms, continue the loop 
+			if (waitKey(10) == 27)
+			{
+				cout << "Esc key is pressed by user. Stoppig the video" << endl;
+				break;
+			}
+		}
 	}
-
-	double dWidth = cap.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-	double dHeight = cap.get(CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
-
-	cout << "Resolution of the video : " << dWidth << " x " << dHeight << endl;
-	string window_name = "My Camera Feed";
-	namedWindow(window_name); //create a window called "My Camera Feed"
-
-	while (true)
+	else
 	{
-		Mat frame;
-		bool bSuccess = cap.read(frame); // read a new frame from video 
-
-		cout<< "channels : "<< frame.channels()<<endl;
+		String imgpath = "C:\\Users\\QTDell\\source\\repos\\veincam\\veincam\\WhatsApp_Image_2019-09-02_7.jpeg";
+		cout << "Enter the image path : ";
+		//cin >> imgpath;
+		
+		Mat frame = imread(imgpath.c_str(), 0);
+		cout << "channels : " << frame.channels() << endl;
 		//Mat skin;
-
+		imshow("Raw frame ", frame);
 		//cvtColor(frame, skin, COLOR_BGR2YCrCb);
 		//imshow("Ycrcb color space", skin);
 		
 		Mat RGBSkin = frame.clone();
-		
+		int dWidth = frame.cols;
+		int dHeight = frame.rows;
 		//RGBSkin.dims = (dWidth, dHeight, 3);
 		for (int i = 0; i < dWidth; i++)
 		{
@@ -56,14 +137,14 @@ int main()
 				//uchar g = frame.at<uchar>(Point(i+1, j));
 				//uchar r = frame.at<uchar>(Point(i+2, j));
 				//cout << "BLue : "<< int(rgb[0]) << endl;
-				
+
 				uchar b = frame.data[frame.channels()*(frame.cols*j + i) + 0];
 				uchar g = frame.data[frame.channels()*(frame.cols*j + i) + 1];
 				uchar r = frame.data[frame.channels()*(frame.cols*j + i) + 2];
 
-				
+
 				//cout << "pointx : " << i << " point y : " << j << endl;
-				if (( b > 20) && (g > 40) && (r > 95) && (r > g) && (r > b))
+				if ((b > 20) && (g > 40) && (r > 95) && (r > g) && (r > b))
 				{
 					RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 0] = b;
 					RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 1] = g;
@@ -75,34 +156,18 @@ int main()
 					RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 1] = 0;
 					RGBSkin.data[RGBSkin.channels()*(RGBSkin.cols*j + i) + 2] = 0;
 				}
-				
+
 			}
 		}
 		//inRange(frame,Scalar(20,40,95), Scalar(200,200,255),RGBSkin);
 		//inRange(skin, Scalar(Y_MIN, Cr_MIN, Cb_MIN), Scalar(Y_MAX, Cr_MAX, Cb_MAX), skin);
 		imshow("Skin from rgb", RGBSkin);
 		imshow("Frame image", frame);
-		//Breaking the while loop if the frames cannot be captured
-		if (bSuccess == false)
-		{
-			cout << "Video camera is disconnected" << endl;
-			cin.get(); //Wait for any key press
-			break;
-		}
 
-		//show the frame in the created window
-		imshow(window_name, frame);
+		cin.get();
 
-		//wait for for 10 ms until any key is pressed.  
-		//If the 'Esc' key is pressed, break the while loop.
-		//If the any other key is pressed, continue the loop 
-		//If any key is not pressed withing 10 ms, continue the loop 
-		if (waitKey(10) == 27)
-		{
-			cout << "Esc key is pressed by user. Stoppig the video" << endl;
-			break;
-		}
 	}
+	
 
 	return 0;
 	
